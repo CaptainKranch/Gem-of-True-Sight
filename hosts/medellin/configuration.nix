@@ -65,6 +65,7 @@
     cargo
     python3
     uv
+    jq
   ];
 
   services.gnome.gnome-keyring.enable = true;
