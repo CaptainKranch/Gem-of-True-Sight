@@ -11,5 +11,7 @@
     ../src/postgresql.nix
     ../src/minio.nix
     ../src/cloudbeaver.nix
+    # Monitoring
+    ../src/cadvisor.nix
   ];
 }

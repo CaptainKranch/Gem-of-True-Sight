@@ -195,12 +195,22 @@
           port = 9032;
         };
       };
-      scrapeConfigs = [{
-        job_name = "TeleAntioquia";
-        static_configs = [{
-          targets = [ "0.0.0.0:${toString config.services.prometheus.exporters.node.port}" ];
-        }];
-      }];
+      scrapeConfigs = [
+        {
+          job_name = "TeleAntioquia";
+          static_configs = [{
+            targets = [ "0.0.0.0:${toString config.services.prometheus.exporters.node.port}" ];
+          }];
+        }
+        {
+          job_name = "cadvisor";
+          static_configs = [{
+            targets = [ "0.0.0.0:8084" ];
+          }];
+          scrape_interval = "15s";
+          metrics_path = "/metrics";
+        }
+      ];
     };
     cockpit = {
       enable = true;
