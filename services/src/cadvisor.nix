@@ -33,12 +33,8 @@
     ];
     cmd = [
       "--housekeeping_interval=10s"
-      "--max_housekeeping_interval=15s"
-      "--event_storage_event_limit=default=0"
-      "--event_storage_age_limit=default=0"
-      "--disable_metrics=percpu,sched,tcp,udp,disk,diskIO,accelerator,hugetlb,referenced_memory,cpu_topology,resctrl"
+      "--max_housekeeping_interval=15s" 
       "--store_container_labels=false"
-      "--whitelisted_container_labels=io.kubernetes.container.name,io.kubernetes.pod.name,io.kubernetes.pod.namespace"
       "--docker_only=false"
     ];
     log-driver = "journald";
