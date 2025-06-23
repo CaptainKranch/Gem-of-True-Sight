@@ -36,6 +36,7 @@
       "--max_housekeeping_interval=15s" 
       "--store_container_labels=false"
       "--docker_only=false"
+      "--raw_cgroup_prefix_whitelist=/system.slice/"
     ];
     log-driver = "journald";
     extraOptions = [
