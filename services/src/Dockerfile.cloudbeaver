@@ -1,0 +1,50 @@
+FROM dbeaver/cloudbeaver:25.1.1
+
+USER root
+
+# Create drivers directory structure for DuckDB
+RUN mkdir -p /opt/cloudbeaver/server/drivers/duckdb
+
+# Create pom.xml for DuckDB driver
+RUN cat > /opt/cloudbeaver/server/drivers/duckdb/pom.xml << 'EOF'
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <parent>
+        <groupId>io.cloudbeaver</groupId>
+        <artifactId>drivers</artifactId>
+        <version>1.0.0</version>
+        <relativePath>../</relativePath>
+    </parent>
+
+    <artifactId>drivers.duckdb</artifactId>
+    <packaging>jar</packaging>
+    <name>CloudBeaver DuckDB driver package</name>
+
+    <dependencies>
+        <dependency>
+            <groupId>org.duckdb</groupId>
+            <artifactId>duckdb_jdbc</artifactId>
+            <version>1.3.0.0</version>
+        </dependency>
+    </dependencies>
+</project>
+EOF
+
+# Download the DuckDB JDBC driver directly
+RUN cd /opt/cloudbeaver/server/drivers/duckdb && \
+    wget -q https://repo1.maven.org/maven2/org/duckdb/duckdb_jdbc/1.3.0.0/duckdb_jdbc-1.3.0.0.jar
+
+# Update the plugin.xml to include DuckDB driver
+RUN cd /opt/cloudbeaver/server/bundles/io.cloudbeaver.resources.drivers.base && \
+    cp plugin.xml plugin.xml.backup && \
+    sed -i '/<\/extension>/i\        <resource name="drivers/duckdb"/>' plugin.xml && \
+    sed -i '/<\/extension>/i\        <bundle id="drivers.duckdb" label="DuckDB driver files"/>' plugin.xml
+
+# Ensure proper permissions
+RUN chown -R dbeaver:dbeaver /opt/cloudbeaver/server/drivers/duckdb
+RUN chmod 644 /opt/cloudbeaver/server/drivers/duckdb/duckdb_jdbc-1.3.0.0.jar
+
+USER dbeaver

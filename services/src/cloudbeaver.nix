@@ -20,7 +20,7 @@
 
   # Containers
   virtualisation.oci-containers.containers."dba-cloudbeaver" = {
-    image = "dbeaver/cloudbeaver:25.1.1";
+    image = "localhost/cloudbeaver-duckdb:25.1.1-duckdb-1.3.0.0";
     environment = {
       "CB_ADMIN_PASSWORD" = "password123";
       "CB_ADMIN_USER" = "admin";
@@ -50,10 +50,12 @@
     after = [
       "podman-network-dba_default.service"
       "podman-volume-dba_cloudbeaver_data.service"
+      "build-cloudbeaver-duckdb.service"
     ];
     requires = [
       "podman-network-dba_default.service"
       "podman-volume-dba_cloudbeaver_data.service"
+      "build-cloudbeaver-duckdb.service"
     ];
     partOf = [
       "podman-compose-dba-root.target"

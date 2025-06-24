@@ -10,6 +10,7 @@
     # DBA & Analytics
     ../src/postgresql.nix
     ../src/minio.nix
+    ../src/build-cloudbeaver.nix
     ../src/cloudbeaver.nix
     # Monitoring
     ../src/cadvisor.nix
