@@ -12,8 +12,7 @@
   "panels": [
     {
       "datasource": {
-        "type": "prometheus",
-        "uid": "${DS_PROMETHEUS}"
+        "type": "prometheus"
       },
       "fieldConfig": {
         "defaults": {
@@ -132,8 +131,7 @@
     },
     {
       "datasource": {
-        "type": "prometheus",
-        "uid": "${DS_PROMETHEUS}"
+        "type": "prometheus"
       },
       "fieldConfig": {
         "defaults": {
@@ -224,8 +222,7 @@
     },
     {
       "datasource": {
-        "type": "prometheus",
-        "uid": "${DS_PROMETHEUS}"
+        "type": "prometheus"
       },
       "fieldConfig": {
         "defaults": {
@@ -310,8 +307,7 @@
     },
     {
       "datasource": {
-        "type": "prometheus",
-        "uid": "${DS_PROMETHEUS}"
+        "type": "prometheus"
       },
       "fieldConfig": {
         "defaults": {
@@ -430,8 +426,7 @@
     },
     {
       "datasource": {
-        "type": "prometheus",
-        "uid": "${DS_PROMETHEUS}"
+        "type": "prometheus"
       },
       "fieldConfig": {
         "defaults": {
@@ -516,8 +511,7 @@
     },
     {
       "datasource": {
-        "type": "prometheus",
-        "uid": "${DS_PROMETHEUS}"
+        "type": "prometheus"
       },
       "fieldConfig": {
         "defaults": {
