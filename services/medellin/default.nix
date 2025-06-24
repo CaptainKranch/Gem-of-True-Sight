@@ -6,7 +6,7 @@
     ../src/plex.nix
     ../src/hoarder.nix
     ../src/calibre.nix
-    #../src/plane.nix
+    ../src/plane.nix
     # DBA & Analytics
     ../src/postgresql.nix
     ../src/minio.nix
