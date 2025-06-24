@@ -195,6 +195,18 @@
           enabledCollectors = [ "systemd" ];
           port = 9032;
         };
+        process = {
+          enable = true;
+          port = 9033;
+          settings = {
+            process_names = [
+              {
+                name = "{{.Comm}}";
+                cmdline = [ ".+" ];
+              }
+            ];
+          };
+        };
       };
       scrapeConfigs = [
         {
@@ -211,16 +223,14 @@
           scrape_interval = "15s";
           metrics_path = "/metrics";
         }
+        {
+          job_name = "process";
+          static_configs = [{
+            targets = [ "0.0.0.0:${toString config.services.prometheus.exporters.process.port}" ];
+          }];
+          scrape_interval = "15s";
+        }
       ];
-    };
-    cockpit = {
-      enable = true;
-      port = 9090;
-      settings = {
-        WebService = {
-          AllowUnencrypted = true;
-        };
-      };
     };
   };
 
