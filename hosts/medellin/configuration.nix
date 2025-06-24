@@ -230,6 +230,13 @@
           }];
           scrape_interval = "15s";
         }
+        {
+          job_name = "systemd";
+          static_configs = [{
+            targets = [ "0.0.0.0:9034" ];
+          }];
+          scrape_interval = "15s";
+        }
       ];
     };
   };
@@ -405,6 +412,19 @@
       echo "PLEX_CLAIM=$(cat ${config.age.secrets.plex-claim.path})" > /run/secrets/plex-env
       chmod 600 /run/secrets/plex-env
     '';
+  };
+
+  # Systemd metrics exporter
+  systemd.services."systemd-exporter" = {
+    description = "Systemd service metrics exporter";
+    wantedBy = [ "multi-user.target" ];
+    after = [ "network.target" ];
+    serviceConfig = {
+      Type = "simple";
+      Restart = "always";
+      ExecStart = "${pkgs.python3}/bin/python3 ${../../services/src/systemd-exporter.py}";
+      User = "root";  # Needed to read systemd service metrics
+    };
   };
 
   # https://nixos.wiki/wiki/FAQ/When_do_I_update_stateVersion
