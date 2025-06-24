@@ -2,6 +2,9 @@ FROM dbeaver/cloudbeaver:25.1.1
 
 USER root
 
+# Install wget for downloading drivers
+RUN apt-get update && apt-get install -y wget && rm -rf /var/lib/apt/lists/*
+
 # Create drivers directory structure for DuckDB
 RUN mkdir -p /opt/cloudbeaver/server/drivers/duckdb
 
