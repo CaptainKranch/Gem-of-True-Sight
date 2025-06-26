@@ -38,16 +38,42 @@ RUN echo '<?xml version="1.0" encoding="UTF-8"?>' > /opt/cloudbeaver/server/driv
 RUN cd /opt/cloudbeaver/server/drivers/duckdb && \
     wget -q https://repo1.maven.org/maven2/org/duckdb/duckdb_jdbc/1.3.0.0/duckdb_jdbc-1.3.0.0.jar
 
-# Explore directory structure first
-RUN find /opt/cloudbeaver -name "*.xml" -type f | head -20
+# Create a custom driver configuration for DuckDB 1.3.0.0
+RUN mkdir -p /opt/cloudbeaver/conf/drivers
+RUN cat > /opt/cloudbeaver/conf/drivers/duckdb.conf << 'EOF'
+{
+  "id": "duckdb:duckdb",
+  "name": "DuckDB",
+  "description": "DuckDB JDBC Driver 1.3.0.0",
+  "class": "org.duckdb.DuckDBDriver",
+  "url": "jdbc:duckdb:",
+  "port": "",
+  "host": "",
+  "folder": "",
+  "file": "true",
+  "embedded": "true",
+  "category": "embedded",
+  "icon": "icons/duckdb_icon.png",
+  "dialect": "duckdb",
+  "defaultDatabase": "",
+  "defaultSchema": "",
+  "defaultUser": "",
+  "sampleURL": "jdbc:duckdb:/path/to/database.duckdb",
+  "webURL": "https://duckdb.org/",
+  "propertiesURL": "https://duckdb.org/docs/sql/configuration.html",
+  "libraries": [
+    {
+      "type": "jar",
+      "path": "drivers/duckdb/duckdb_jdbc-1.3.0.0.jar",
+      "custom": "true"
+    }
+  ]
+}
+EOF
 
-# Try to find plugin.xml files
-RUN find /opt/cloudbeaver -name "plugin.xml" -type f | head -10 || echo "No plugin.xml found"
-
-# List CloudBeaver directory structure
-RUN ls -la /opt/cloudbeaver/
-RUN ls -la /opt/cloudbeaver/server/ || echo "No server directory"
-RUN ls -la /opt/cloudbeaver/conf/ || echo "No conf directory"
+# Replace the existing DuckDB driver JAR with our version
+RUN find /opt/cloudbeaver -name "*duckdb*.jar" -exec rm {} \; || echo "No existing DuckDB JARs found"
+RUN cp /opt/cloudbeaver/server/drivers/duckdb/duckdb_jdbc-1.3.0.0.jar /opt/cloudbeaver/server/lib/ || echo "Could not copy to lib"
 
 # Ensure proper permissions
 RUN chown -R dbeaver:dbeaver /opt/cloudbeaver/server/drivers/duckdb

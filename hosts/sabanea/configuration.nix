@@ -34,6 +34,9 @@
           }
         );
       })
+      (final: prev: {
+        opencode = prev.callPackage ../../programs/terminal/opencode.nix { };
+      })
     ];
     # Configure your nixpkgs instance
     config = {
@@ -101,6 +104,7 @@
     xorg.libXinerama
     xorg.xinit
     xorg.xinput
+    opencode
   ];
   
   services = {
