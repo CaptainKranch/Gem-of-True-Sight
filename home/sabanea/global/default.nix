@@ -12,6 +12,8 @@
     ./gtk.nix
     ./qt.nix
     ./keyring.nix
+    #./darkman.nix  # Using timed version instead
+    ./darkman-timed.nix
 
     # You can also split up your configuration and import pieces of it here:
     # ./nvim.nix

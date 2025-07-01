@@ -105,6 +105,7 @@
     xorg.xinit
     xorg.xinput
     opencode
+    darkman
   ];
   
   services = {
