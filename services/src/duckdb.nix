@@ -17,7 +17,7 @@
       # Install required packages if not already installed
       if ! command -v wget &> /dev/null; then
         apt-get update
-        apt-get install -y wget unzip ca-certificates netcat-traditional
+        apt-get install -y wget unzip ca-certificates netcat-traditional screen
       fi
       
       # Set up SSL certificates
@@ -34,33 +34,53 @@
         rm duckdb_cli-linux-amd64.zip
       fi
       
-      # Start DuckDB with UI in a screen-like fashion
+      # Start DuckDB in screen session
       cd /data
       echo "Starting DuckDB UI..."
       
-      # Use expect or similar to keep DuckDB interactive
-      # For now, let's try a different approach with a background process
-      (
-        sleep 2
-        echo "INSTALL ui;"
-        echo "LOAD ui;"
-        echo "CALL start_ui(bind='0.0.0.0', port=4213);"
-        echo "-- Keep alive"
-        while true; do
-          sleep 3600
-          echo "SELECT 'keepalive' WHERE 1=0;"
-        done
-      ) | /data/duckdb /data/database.duckdb &
+      # Create initialization script
+      cat > /data/init.sql << 'EOF'
+      INSTALL ui;
+      LOAD ui;
+      CALL start_ui();
+      SELECT 'DuckDB UI is running at http://0.0.0.0:4213' as info;
+      EOF
       
-      # Wait a bit for startup
+      # Start DuckDB in a screen session to keep it interactive
+      screen -dmS duckdb_session bash -c "
+        cd /data
+        /data/duckdb /data/database.duckdb < /data/init.sql
+        # After init, keep DuckDB running interactively
+        exec /data/duckdb /data/database.duckdb
+      "
+      
+      # Wait for startup
+      echo "Waiting for DuckDB to start..."
       sleep 10
       
-      # Check if port is listening
-      echo "Checking if DuckDB UI is running..."
-      nc -z 0.0.0.0 4213 && echo "DuckDB UI is running on port 4213" || echo "Failed to start UI"
+      # Check if screen session is running
+      screen -list | grep duckdb_session && echo "DuckDB session is running" || echo "Failed to start DuckDB session"
+      
+      # Try to check if port is open
+      for i in {1..10}; do
+        if nc -z localhost 4213 2>/dev/null; then
+          echo "DuckDB UI is accessible on port 4213"
+          break
+        else
+          echo "Waiting for UI to start... (attempt $i/10)"
+          sleep 2
+        fi
+      done
+      
+      # Show the screen session logs
+      echo "=== DuckDB Logs ==="
+      screen -S duckdb_session -X hardcopy /tmp/screen.log
+      cat /tmp/screen.log || true
+      echo "=================="
       
       # Keep the container running
       echo "Container is running. DuckDB UI should be at http://localhost:4213"
+      echo "To attach to DuckDB session, run: podman exec -it duckdb-server screen -r duckdb_session"
       tail -f /dev/null
     '';
   };
@@ -70,6 +90,10 @@
     image = "ubuntu:22.04";
     
     cmd = [ "/etc/duckdb/start-duckdb.sh" ];
+    
+    environment = {
+      "DEBIAN_FRONTEND" = "noninteractive";
+    };
     
     volumes = [
       # Persistent storage
