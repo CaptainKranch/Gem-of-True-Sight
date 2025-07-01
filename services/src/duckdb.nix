@@ -1,29 +1,51 @@
-# services/duckdb-container.nix
+# services/src/duckdb.nix
 { pkgs, lib, config, ... }:
 
 {
-  # Create a custom DuckDB container image
+  # Ensure data directory exists
+  systemd.tmpfiles.rules = [
+    "d /home/danielgm/Documents/Services/duckdb/data 0755 danielgm users -"
+  ];
+
+  # DuckDB Container
   virtualisation.oci-containers.containers."duckdb-server" = {
     image = "alpine:latest";
     
-    # Start DuckDB with UI and keep it running
+    # Download DuckDB and start with UI
     cmd = [ 
       "/bin/sh" 
       "-c" 
-      "cd /data && echo 'install ui; load ui; call start_ui();' | /usr/local/bin/duckdb -persist && tail -f /dev/null"
+      ''
+        # Install required packages
+        apk add --no-cache wget ca-certificates
+        
+        # Download DuckDB if not exists
+        if [ ! -f /data/duckdb ]; then
+          echo "Downloading DuckDB..."
+          wget https://github.com/duckdb/duckdb/releases/download/v1.3.1/duckdb_cli-linux-amd64.zip
+          unzip duckdb_cli-linux-amd64.zip
+          mv duckdb /data/duckdb
+          chmod +x /data/duckdb
+          rm duckdb_cli-linux-amd64.zip
+        fi
+        
+        # Start DuckDB with UI
+        cd /data
+        echo "Starting DuckDB UI..."
+        /data/duckdb -persist /data/database.duckdb << EOF
+        INSTALL ui;
+        LOAD ui;
+        CALL start_ui();
+        EOF
+        
+        # Keep container running
+        tail -f /dev/null
+      ''
     ];
     
-    environment = {
-      "SSL_CERT_FILE" = "/etc/ssl/certs/ca-certificates.crt";
-    };
-    
     volumes = [
-      # Persistent database storage
-      "/home/danielgm/Documents/Services/duckdb/data:/data:rw,z"
-      # Mount the DuckDB binary (built with our wrapper)
-      "${pkgs.duckdb-with-extensions}/bin/duckdb:/usr/local/bin/duckdb:ro"
-      # Mount SSL certificates
-      "${pkgs.cacert}/etc/ssl/certs:/etc/ssl/certs:ro"
+      # Persistent storage for database and duckdb binary
+      "/home/danielgm/Documents/Services/duckdb/data:/data:rw"
     ];
     
     ports = [
@@ -34,7 +56,7 @@
     
     extraOptions = [
       "--network-alias=duckdb"
-      "--network=services_network"
+      "--network=minio_minionetwork"  # Use your existing network
     ];
   };
   
@@ -44,38 +66,23 @@
       RestartSec = "10s";
     };
     after = [
-      "podman-network-services_network.service"
+      "podman-network-minio_minionetwork.service"
     ];
     requires = [
-      "podman-network-services_network.service"
+      "podman-network-minio_minionetwork.service"
     ];
     partOf = [
-      "podman-compose-services-root.target"
+      "podman-compose-duckdb-root.target"
     ];
     wantedBy = [
-      "podman-compose-services-root.target"
+      "podman-compose-duckdb-root.target"
     ];
   };
 
-  # Add to your existing network or create a new one
-  systemd.services."podman-network-services_network" = {
-    path = [ pkgs.podman ];
-    serviceConfig = {
-      Type = "oneshot";
-      RemainAfterExit = true;
-      ExecStop = "podman network rm -f services_network";
-    };
-    script = ''
-      podman network inspect services_network || podman network create services_network --driver=bridge
-    '';
-    partOf = [ "podman-compose-services-root.target" ];
-    wantedBy = [ "podman-compose-services-root.target" ];
-  };
-
-  # Root service
-  systemd.targets."podman-compose-services-root" = {
+  # Root service for DuckDB
+  systemd.targets."podman-compose-duckdb-root" = {
     unitConfig = {
-      Description = "Root target for services.";
+      Description = "Root target for DuckDB container.";
     };
     wantedBy = [ "multi-user.target" ];
   };
