@@ -7,21 +7,25 @@
     "d /home/danielgm/Documents/Services/duckdb/data 0755 danielgm users -"
   ];
 
-  # DuckDB Container
+  # DuckDB Container - Using Ubuntu instead of Alpine for glibc compatibility
   virtualisation.oci-containers.containers."duckdb-server" = {
-    image = "alpine:latest";
+    image = "ubuntu:22.04";
     
     # Download DuckDB and start with UI
     cmd = [ 
-      "/bin/sh" 
+      "/bin/bash" 
       "-c" 
       ''
         # Install required packages
-        apk add --no-cache wget ca-certificates
+        apt-get update && apt-get install -y wget unzip ca-certificates
+        
+        # Set up SSL certificates
+        export SSL_CERT_FILE=/etc/ssl/certs/ca-certificates.crt
         
         # Download DuckDB if not exists
         if [ ! -f /data/duckdb ]; then
           echo "Downloading DuckDB..."
+          cd /tmp
           wget https://github.com/duckdb/duckdb/releases/download/v1.3.1/duckdb_cli-linux-amd64.zip
           unzip duckdb_cli-linux-amd64.zip
           mv duckdb /data/duckdb
@@ -35,10 +39,14 @@
         /data/duckdb -persist /data/database.duckdb << EOF
         INSTALL ui;
         LOAD ui;
+        SET autoinstall_known_extensions=1;
+        SET autoload_known_extensions=1;
         CALL start_ui();
+        .open /data/database.duckdb
         EOF
         
-        # Keep container running
+        # Keep container running and show logs
+        echo "DuckDB UI should be available at http://localhost:4213"
         tail -f /dev/null
       ''
     ];
