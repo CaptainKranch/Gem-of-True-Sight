@@ -36,17 +36,26 @@
         # Start DuckDB with UI
         cd /data
         echo "Starting DuckDB UI..."
-        /data/duckdb -persist /data/database.duckdb << EOF
+        
+        # Create a script to keep DuckDB running
+        cat > /data/start-ui.sql << 'EOF'
         INSTALL ui;
         LOAD ui;
-        SET autoinstall_known_extensions=1;
-        SET autoload_known_extensions=1;
         CALL start_ui();
-        .open /data/database.duckdb
+        -- Keep the session alive
+        SELECT 'DuckDB UI started at http://localhost:4213' as status;
         EOF
         
-        # Keep container running and show logs
+        # Start DuckDB with the database file
+        echo "Starting DuckDB with UI extension..."
+        /data/duckdb /data/database.duckdb < /data/start-ui.sql &
+        
+        # Give it a moment to start
+        sleep 5
+        
+        # Keep container running
         echo "DuckDB UI should be available at http://localhost:4213"
+        echo "Container is running. Press Ctrl+C to stop."
         tail -f /dev/null
       ''
     ];
