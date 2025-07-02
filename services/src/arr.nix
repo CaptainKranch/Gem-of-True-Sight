@@ -184,7 +184,7 @@
       "/home/danielgm/Documents/Services/nixarr/media/qbittorrent:/config:rw"
     ];
     ports = [
-      "8080:8080/tcp" # Web UI
+      "9090:8080/tcp" # Web UI
       "6881:6881/tcp" # Default Torrenting Port (TCP)
       "6881:6881/udp" # Default Torrenting Port (UDP)
     ];
@@ -231,3 +231,4 @@
     wantedBy = [ "multi-user.target" ];
   };
 }
+nix run github:aksiksi/compose2nix -- -inputs docker-compose.yml --output plane.nix --project plane --env_files=plane.env --include_env_files=truejjkkk

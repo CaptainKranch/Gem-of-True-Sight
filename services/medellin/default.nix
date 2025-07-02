@@ -5,13 +5,14 @@
     ../src/arr.nix
     ../src/plex.nix
     ../src/hoarder.nix
-    ../src/calibre.nix
+    #../src/calibre.nix
     ../src/plane.nix
     # DBA & Analytics
     ../src/postgresql.nix
     ../src/minio.nix
-    ../src/duckdb.nix
+    #../src/duckdb.nix
+    ../src/cdc.nix
     # Monitoring
-    ../src/cadvisor.nix
+    #../src/cadvisor.nix
   ];
 }
