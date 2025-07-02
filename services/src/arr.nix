@@ -184,7 +184,7 @@
       "/home/danielgm/Documents/Services/nixarr/media/qbittorrent:/config:rw"
     ];
     ports = [
-      "9090:8080/tcp" # Web UI
+      "8080:8080/tcp" # Web UI
       "6881:6881/tcp" # Default Torrenting Port (TCP)
       "6881:6881/udp" # Default Torrenting Port (UDP)
     ];

@@ -63,7 +63,7 @@
       "KAFKA_CONNECT_URIS" = "http://connect:8083";
     };
     ports = [
-      "8080:8080/tcp"
+      "8087:8080/tcp"
     ];
     dependsOn = [
       "connect"
