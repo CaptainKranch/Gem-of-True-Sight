@@ -231,4 +231,3 @@
     wantedBy = [ "multi-user.target" ];
   };
 }
-nix run github:aksiksi/compose2nix -- -inputs docker-compose.yml --output plane.nix --project plane --env_files=plane.env --include_env_files=truejjkkk
