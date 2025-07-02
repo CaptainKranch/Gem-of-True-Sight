@@ -11,7 +11,7 @@
     ../src/postgresql.nix
     ../src/minio.nix
     #../src/duckdb.nix
-    ../src/cdc.nix
+    #../src/cdc.nix
     # Monitoring
     #../src/cadvisor.nix
   ];
