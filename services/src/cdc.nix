@@ -23,15 +23,10 @@
     image = "quay.io/debezium/connect:3.1";
     environment = {
       "BOOTSTRAP_SERVERS" = "kafka:9092";
-      "CONFIG_STORAGE_REPLICATION_FACTOR" = "1";
-      "CONFIG_STORAGE_TOPIC" = "debezium-configs";
-      "CONNECT_CONNECTOR_CLIENT_CONFIG_OVERRIDE_POLICY" = "All";
-      "CONNECT_LOG4J_LOGGERS" = "io.debezium=INFO,org.apache.kafka.connect=INFO";
-      "GROUP_ID" = "debezium-cluster";
-      "OFFSET_STORAGE_REPLICATION_FACTOR" = "1";
-      "OFFSET_STORAGE_TOPIC" = "debezium-offsets";
-      "STATUS_STORAGE_REPLICATION_FACTOR" = "1";
-      "STATUS_STORAGE_TOPIC" = "debezium-status";
+      "CONFIG_STORAGE_TOPIC" = "my_connect_configs";
+      "GROUP_ID" = "1";
+      "OFFSET_STORAGE_TOPIC" = "my_connect_offsets";
+      "STATUS_STORAGE_TOPIC" = "my_connect_statuses";
     };
     ports = [
       "8083:8083/tcp"
@@ -42,7 +37,7 @@
     log-driver = "journald";
     extraOptions = [
       "--network-alias=connect"
-      "--network=debezium_debezium-network"
+      "--network=debizium_debezium-network"
     ];
   };
   systemd.services."podman-connect" = {
@@ -50,16 +45,16 @@
       Restart = lib.mkOverride 90 "no";
     };
     after = [
-      "podman-network-debezium_debezium-network.service"
+      "podman-network-debizium_debezium-network.service"
     ];
     requires = [
-      "podman-network-debezium_debezium-network.service"
+      "podman-network-debizium_debezium-network.service"
     ];
     partOf = [
-      "podman-compose-debezium-root.target"
+      "podman-compose-debizium-root.target"
     ];
     wantedBy = [
-      "podman-compose-debezium-root.target"
+      "podman-compose-debizium-root.target"
     ];
   };
   virtualisation.oci-containers.containers."debezium-ui" = {
@@ -76,7 +71,7 @@
     log-driver = "journald";
     extraOptions = [
       "--network-alias=debezium-ui"
-      "--network=debezium_debezium-network"
+      "--network=debizium_debezium-network"
     ];
   };
   systemd.services."podman-debezium-ui" = {
@@ -84,46 +79,33 @@
       Restart = lib.mkOverride 90 "no";
     };
     after = [
-      "podman-network-debezium_debezium-network.service"
+      "podman-network-debizium_debezium-network.service"
     ];
     requires = [
-      "podman-network-debezium_debezium-network.service"
+      "podman-network-debizium_debezium-network.service"
     ];
     partOf = [
-      "podman-compose-debezium-root.target"
+      "podman-compose-debizium-root.target"
     ];
     wantedBy = [
-      "podman-compose-debezium-root.target"
+      "podman-compose-debizium-root.target"
     ];
   };
   virtualisation.oci-containers.containers."kafka" = {
     image = "quay.io/debezium/kafka:3.1";
     environment = {
-      "CLUSTER_ID" = "MkU3OEVBNTcwNTJENDM2Qk";
-      "KAFKA_ADVERTISED_LISTENERS" = "PLAINTEXT://kafka:9092";
-      "KAFKA_CONTROLLER_LISTENER_NAMES" = "CONTROLLER";
-      "KAFKA_CONTROLLER_QUORUM_VOTERS" = "1@kafka:9093";
-      "KAFKA_ENABLE_KRAFT" = "yes";
-      "KAFKA_INTER_BROKER_LISTENER_NAME" = "PLAINTEXT";
-      "KAFKA_LISTENERS" = "PLAINTEXT://0.0.0.0:9092,CONTROLLER://0.0.0.0:9093";
-      "KAFKA_LISTENER_SECURITY_PROTOCOL_MAP" = "CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT";
-      "KAFKA_LOG_DIRS" = "/kafka/logs";
-      "KAFKA_NODE_ID" = "1";
-      "KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR" = "1";
-      "KAFKA_PROCESS_ROLES" = "controller,broker";
-      "KAFKA_TRANSACTION_STATE_LOG_MIN_ISR" = "1";
-      "KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR" = "1";
+      "ZOOKEEPER_CONNECT" = "zookeeper:2181";
     };
-    volumes = [
-      "debezium_kafka-data:/kafka/logs:rw"
-    ];
     ports = [
       "9092:9092/tcp"
+    ];
+    dependsOn = [
+      "zookeeper"
     ];
     log-driver = "journald";
     extraOptions = [
       "--network-alias=kafka"
-      "--network=debezium_debezium-network"
+      "--network=debizium_debezium-network"
     ];
   };
   systemd.services."podman-kafka" = {
@@ -131,18 +113,16 @@
       Restart = lib.mkOverride 90 "no";
     };
     after = [
-      "podman-network-debezium_debezium-network.service"
-      "podman-volume-debezium_kafka-data.service"
+      "podman-network-debizium_debezium-network.service"
     ];
     requires = [
-      "podman-network-debezium_debezium-network.service"
-      "podman-volume-debezium_kafka-data.service"
+      "podman-network-debizium_debezium-network.service"
     ];
     partOf = [
-      "podman-compose-debezium-root.target"
+      "podman-compose-debizium-root.target"
     ];
     wantedBy = [
-      "podman-compose-debezium-root.target"
+      "podman-compose-debizium-root.target"
     ];
   };
   virtualisation.oci-containers.containers."kafka-ui" = {
@@ -153,6 +133,7 @@
       "KAFKA_CLUSTERS_0_KAFKACONNECT_0_NAME" = "debezium";
       "KAFKA_CLUSTERS_0_NAME" = "debezium-cluster";
       "KAFKA_CLUSTERS_0_SCHEMAREGISTRY" = "http://schema-registry:8081";
+      "KAFKA_CLUSTERS_0_ZOOKEEPER" = "zookeeper:2181";
     };
     ports = [
       "8082:8080/tcp"
@@ -161,11 +142,12 @@
       "connect"
       "kafka"
       "schema-registry"
+      "zookeeper"
     ];
     log-driver = "journald";
     extraOptions = [
       "--network-alias=kafka-ui"
-      "--network=debezium_debezium-network"
+      "--network=debizium_debezium-network"
     ];
   };
   systemd.services."podman-kafka-ui" = {
@@ -173,16 +155,16 @@
       Restart = lib.mkOverride 90 "no";
     };
     after = [
-      "podman-network-debezium_debezium-network.service"
+      "podman-network-debizium_debezium-network.service"
     ];
     requires = [
-      "podman-network-debezium_debezium-network.service"
+      "podman-network-debizium_debezium-network.service"
     ];
     partOf = [
-      "podman-compose-debezium-root.target"
+      "podman-compose-debizium-root.target"
     ];
     wantedBy = [
-      "podman-compose-debezium-root.target"
+      "podman-compose-debizium-root.target"
     ];
   };
   virtualisation.oci-containers.containers."schema-registry" = {
@@ -201,7 +183,7 @@
     log-driver = "journald";
     extraOptions = [
       "--network-alias=schema-registry"
-      "--network=debezium_debezium-network"
+      "--network=debizium_debezium-network"
     ];
   };
   systemd.services."podman-schema-registry" = {
@@ -209,52 +191,68 @@
       Restart = lib.mkOverride 90 "no";
     };
     after = [
-      "podman-network-debezium_debezium-network.service"
+      "podman-network-debizium_debezium-network.service"
     ];
     requires = [
-      "podman-network-debezium_debezium-network.service"
+      "podman-network-debizium_debezium-network.service"
     ];
     partOf = [
-      "podman-compose-debezium-root.target"
+      "podman-compose-debizium-root.target"
     ];
     wantedBy = [
-      "podman-compose-debezium-root.target"
+      "podman-compose-debizium-root.target"
+    ];
+  };
+  virtualisation.oci-containers.containers."zookeeper" = {
+    image = "quay.io/debezium/zookeeper:3.1";
+    ports = [
+      "2181:2181/tcp"
+      "2888:2888/tcp"
+      "3888:3888/tcp"
+    ];
+    log-driver = "journald";
+    extraOptions = [
+      "--network-alias=zookeeper"
+      "--network=debizium_debezium-network"
+    ];
+  };
+  systemd.services."podman-zookeeper" = {
+    serviceConfig = {
+      Restart = lib.mkOverride 90 "no";
+    };
+    after = [
+      "podman-network-debizium_debezium-network.service"
+    ];
+    requires = [
+      "podman-network-debizium_debezium-network.service"
+    ];
+    partOf = [
+      "podman-compose-debizium-root.target"
+    ];
+    wantedBy = [
+      "podman-compose-debizium-root.target"
     ];
   };
 
   # Networks
-  systemd.services."podman-network-debezium_debezium-network" = {
+  systemd.services."podman-network-debizium_debezium-network" = {
     path = [ pkgs.podman ];
     serviceConfig = {
       Type = "oneshot";
       RemainAfterExit = true;
-      ExecStop = "podman network rm -f debezium_debezium-network";
+      ExecStop = "podman network rm -f debizium_debezium-network";
     };
     script = ''
-      podman network inspect debezium_debezium-network || podman network create debezium_debezium-network --driver=bridge
+      podman network inspect debizium_debezium-network || podman network create debizium_debezium-network --driver=bridge
     '';
-    partOf = [ "podman-compose-debezium-root.target" ];
-    wantedBy = [ "podman-compose-debezium-root.target" ];
-  };
-
-  # Volumes
-  systemd.services."podman-volume-debezium_kafka-data" = {
-    path = [ pkgs.podman ];
-    serviceConfig = {
-      Type = "oneshot";
-      RemainAfterExit = true;
-    };
-    script = ''
-      podman volume inspect debezium_kafka-data || podman volume create debezium_kafka-data
-    '';
-    partOf = [ "podman-compose-debezium-root.target" ];
-    wantedBy = [ "podman-compose-debezium-root.target" ];
+    partOf = [ "podman-compose-debizium-root.target" ];
+    wantedBy = [ "podman-compose-debizium-root.target" ];
   };
 
   # Root service
   # When started, this will automatically create all resources and start
   # the containers. When stopped, this will teardown all resources.
-  systemd.targets."podman-compose-debezium-root" = {
+  systemd.targets."podman-compose-debizium-root" = {
     unitConfig = {
       Description = "Root target generated by compose2nix.";
     };
