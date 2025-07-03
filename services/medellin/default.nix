@@ -10,7 +10,7 @@
     # DBA & Analytics
     ../src/postgresql.nix
     ../src/minio.nix
-    ../src/cdc.nix
+    #../src/cdc.nix
     #../src/duckdb.nix
     # Monitoring
     #../src/cadvisor.nix
