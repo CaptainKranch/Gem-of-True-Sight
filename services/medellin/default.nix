@@ -10,6 +10,7 @@
     # DBA & Analytics
     ../src/postgresql.nix
     ../src/minio.nix
+    ../src/kestra.nix
     #../src/cdc.nix
     #../src/duckdb.nix
     # Monitoring

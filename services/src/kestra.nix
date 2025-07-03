@@ -1,0 +1,180 @@
+# Auto-generated using compose2nix v0.3.2-pre.
+{ pkgs, lib, config, ... }:
+
+{
+  # Runtime
+  virtualisation.podman = {
+    enable = true;
+    autoPrune.enable = true;
+    dockerCompat = true;
+  };
+
+  # Enable container name DNS for all Podman networks.
+  networking.firewall.interfaces = let
+    matchAll = if !config.networking.nftables.enable then "podman+" else "podman*";
+  in {
+    "${matchAll}".allowedUDPPorts = [ 53 ];
+  };
+
+  virtualisation.oci-containers.backend = "podman";
+
+  # Containers
+  virtualisation.oci-containers.containers."kestra-kestra" = {
+    image = "kestra/kestra:latest";
+    environment = {
+      "KESTRA_CONFIGURATION" = "datasources:
+    postgres:
+      url: jdbc:postgresql://postgres:5432/kestra
+      driverClassName: org.postgresql.Driver
+      username: kestra
+      password: k3str4
+  kestra:
+    server:
+      basicAuth:
+        enabled: false
+        username: \"admin@localhost.dev\" # it must be a valid email address
+        password: kestra
+    repository:
+      type: postgres
+    storage:
+      type: local
+      local:
+        basePath: \"/app/storage\"
+    queue:
+      type: postgres
+    tasks:
+      tmpDir:
+        path: /tmp/kestra-wd/tmp
+    url: http://localhost:8080/
+  ";
+    };
+    volumes = [
+      "/tmp/kestra-wd:/tmp/kestra-wd:rw"
+      "/var/run/docker.sock:/var/run/docker.sock:rw"
+      "kestra_kestra-data:/app/storage:rw"
+    ];
+    ports = [
+      "8080:8080/tcp"
+      "8081:8081/tcp"
+    ];
+    cmd = [ "server" "standalone" ];
+    dependsOn = [
+      "kestra-postgres"
+    ];
+    user = "root";
+    log-driver = "journald";
+    extraOptions = [
+      "--network-alias=kestra"
+      "--network=kestra_default"
+    ];
+  };
+  systemd.services."podman-kestra-kestra" = {
+    serviceConfig = {
+      Restart = lib.mkOverride 90 "no";
+    };
+    after = [
+      "podman-network-kestra_default.service"
+      "podman-volume-kestra_kestra-data.service"
+    ];
+    requires = [
+      "podman-network-kestra_default.service"
+      "podman-volume-kestra_kestra-data.service"
+    ];
+    partOf = [
+      "podman-compose-kestra-root.target"
+    ];
+    wantedBy = [
+      "podman-compose-kestra-root.target"
+    ];
+  };
+  virtualisation.oci-containers.containers."kestra-postgres" = {
+    image = "postgres";
+    environment = {
+      "POSTGRES_DB" = "kestra";
+      "POSTGRES_PASSWORD" = "k3str4";
+      "POSTGRES_USER" = "kestra";
+    };
+    volumes = [
+      "kestra_postgres-data:/var/lib/postgresql/data:rw"
+    ];
+    log-driver = "journald";
+    extraOptions = [
+      "--health-cmd=pg_isready -d \${POSTGRES_DB} -U \${POSTGRES_USER}"
+      "--health-interval=30s"
+      "--health-retries=10"
+      "--health-timeout=10s"
+      "--network-alias=postgres"
+      "--network=kestra_default"
+    ];
+  };
+  systemd.services."podman-kestra-postgres" = {
+    serviceConfig = {
+      Restart = lib.mkOverride 90 "no";
+    };
+    after = [
+      "podman-network-kestra_default.service"
+      "podman-volume-kestra_postgres-data.service"
+    ];
+    requires = [
+      "podman-network-kestra_default.service"
+      "podman-volume-kestra_postgres-data.service"
+    ];
+    partOf = [
+      "podman-compose-kestra-root.target"
+    ];
+    wantedBy = [
+      "podman-compose-kestra-root.target"
+    ];
+  };
+
+  # Networks
+  systemd.services."podman-network-kestra_default" = {
+    path = [ pkgs.podman ];
+    serviceConfig = {
+      Type = "oneshot";
+      RemainAfterExit = true;
+      ExecStop = "podman network rm -f kestra_default";
+    };
+    script = ''
+      podman network inspect kestra_default || podman network create kestra_default
+    '';
+    partOf = [ "podman-compose-kestra-root.target" ];
+    wantedBy = [ "podman-compose-kestra-root.target" ];
+  };
+
+  # Volumes
+  systemd.services."podman-volume-kestra_kestra-data" = {
+    path = [ pkgs.podman ];
+    serviceConfig = {
+      Type = "oneshot";
+      RemainAfterExit = true;
+    };
+    script = ''
+      podman volume inspect kestra_kestra-data || podman volume create kestra_kestra-data --driver=local
+    '';
+    partOf = [ "podman-compose-kestra-root.target" ];
+    wantedBy = [ "podman-compose-kestra-root.target" ];
+  };
+  systemd.services."podman-volume-kestra_postgres-data" = {
+    path = [ pkgs.podman ];
+    serviceConfig = {
+      Type = "oneshot";
+      RemainAfterExit = true;
+    };
+    script = ''
+      podman volume inspect kestra_postgres-data || podman volume create kestra_postgres-data --driver=local
+    '';
+    partOf = [ "podman-compose-kestra-root.target" ];
+    wantedBy = [ "podman-compose-kestra-root.target" ];
+  };
+
+  # Root service
+  # When started, this will automatically create all resources and start
+  # the containers. When stopped, this will teardown all resources.
+  systemd.targets."podman-compose-kestra-root" = {
+    unitConfig = {
+      Description = "Root target generated by compose2nix.";
+    };
+    wantedBy = [ "multi-user.target" ];
+  };
+}
