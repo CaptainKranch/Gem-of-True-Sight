@@ -24,18 +24,38 @@
       # neovim-nightly-overlay.overlays.default
       (final: prev: {
         dwm = prev.dwm.overrideAttrs (old: { 
-          src = /home/danielgm/.dots-flakes/modules/dwm;
+          src = /home/danielgm/.config/nix/Gem-of-true-sight/modules/dwm;
           }
         );
       })
       (final: prev: {
         dmenu = prev.dmenu.overrideAttrs (old: { 
-          src = /home/danielgm/.dots-flakes/modules/dmenu;
+          src = /home/danielgm/.config/nix/Gem-of-true-sight/modules/dmenu;
           }
         );
       })
+#      (final: prev: {
+#        opencode = prev.opencode.overrideAttrs (oldAttrs: rec {
+#          version = "0.1.172";
+#          src = prev.fetchFromGitHub {
+#            owner = "sst";
+#            repo = "opencode";
+#            rev = "v${version}";
+#            hash = "sha256-7z1vlhPqaLd6tQ0N/fCCTBR1HZ6z6mvUZFzw082Y2dU=";
+#          };
+#        });
+#      })
       (final: prev: {
-        opencode = prev.callPackage ../../programs/terminal/opencode.nix { };
+        duckdb = prev.duckdb.overrideAttrs (oldAttrs: rec {
+          version = "1.3.1";
+          src = prev.fetchFromGitHub {
+            owner = "duckdb";
+            repo = "duckdb";
+            rev = "v${version}";
+            # Hash obtained using: nix-prefetch-url --unpack https://github.com/duckdb/duckdb/archive/v1.3.1.tar.gz
+            hash = "sha256-32wEbYF3immUkwGVeLFNncQ5pRpA4ujbaCNwBUcmMNA=";
+          };
+        });
       })
     ];
     # Configure your nixpkgs instance
@@ -73,6 +93,7 @@
     (import ../../scripts/wallpaper.nix { inherit pkgs; })
     #(import ../../scripts/liveWall.nix { inherit pkgs; })
     (import ../../scripts/lock-screen.nix { inherit pkgs; })
+    (import ../../scripts/kitty-theme.nix { inherit pkgs; })
     git
     picom
     dmenu
@@ -91,11 +112,10 @@
     python312
     uv
     dbeaver-bin
-    openvpn
-    openvpn3
     networkmanager-openvpn
     networkmanagerapplet
     lxappearance
+    duckdb
     inputs.zen-browser.packages.${pkgs.system}.default
     xorg.libX11
     xorg.libX11.dev
@@ -107,6 +127,11 @@
     opencode
     darkman
   ];
+  
+  # Steam
+  programs.steam = {
+    enable = true;
+  };
   
   services = {
     xserver = {

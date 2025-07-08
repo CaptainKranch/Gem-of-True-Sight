@@ -14,10 +14,14 @@ buildGoModule (finalAttrs: {
     owner = "sst";
     repo = "opencode";
     tag = "v${finalAttrs.version}";
-    hash = "sha256-AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=";
+    hash = "sha256-MNSs1E73wRTBsttHAor+YtkaM64u4A8y9O4RTgkkSDM=";
   };
 
-  vendorHash = "sha256-AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=";
+  sourceRoot = "source/packages/tui";
+
+  vendorHash = "sha256-WunhXuyqirY7RDs49hSOtWE+XgWx2v9zs12SIGLbPTc=";
+
+  doCheck = false;
 
   ldflags = [
     "-s"

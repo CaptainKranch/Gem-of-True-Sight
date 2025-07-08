@@ -20,6 +20,7 @@ static void grid(Monitor *m);
 static void nrowgrid(Monitor *m);
 static void spiral(Monitor *m);
 static void tile(Monitor *m);
+static void threevbars(Monitor *m);
 /* Internals */
 static void getgaps(Monitor *m, int *oh, int *ov, int *ih, int *iv, unsigned int *nc);
 static void getfacts(Monitor *m, int msize, int ssize, float *mf, float *sf, int *mr, int *sr);
@@ -819,4 +820,50 @@ tile(Monitor *m)
 			resize(c, sx, sy, sw - (2*c->bw), sh * (c->cfact / sfacts) + ((i - m->nmaster) < srest ? 1 : 0) - (2*c->bw), 0);
 			sy += HEIGHT(c) + ih;
 		}
+}
+
+/*
+ * Three vertical bars layout + gaps
+ */
+static void
+threevbars(Monitor *m)
+{
+	unsigned int i, n, col;
+	int oh, ov, ih, iv;
+	int barw, clienth;
+	int x[3], y[3];
+	int clients_per_col, remainder;
+	Client *c;
+
+	getgaps(m, &oh, &ov, &ih, &iv, &n);
+	if (n == 0)
+		return;
+
+	/* Calculate bar dimensions */
+	barw = (m->ww - 2*ov - 2*ih) / 3;
+	clients_per_col = n / 3;
+	remainder = n % 3;
+	
+	/* Calculate x positions for the three bars */
+	x[0] = m->wx + ov;
+	x[1] = x[0] + barw + ih;
+	x[2] = x[1] + barw + ih;
+	
+	/* Initialize y positions */
+	y[0] = y[1] = y[2] = m->wy + oh;
+
+	for (i = 0, c = nexttiled(m->clients); c; c = nexttiled(c->next), i++) {
+		col = i % 3;
+		
+		/* Calculate height for this client */
+		int col_clients = clients_per_col + (col < remainder ? 1 : 0);
+		int col_height = m->wh - 2*oh;
+		if (col_clients > 1)
+			clienth = (col_height - (col_clients - 1) * iv) / col_clients;
+		else
+			clienth = col_height;
+		
+		resize(c, x[col], y[col], barw - (2*c->bw), clienth - (2*c->bw), 0);
+		y[col] += clienth + iv;
+	}
 }

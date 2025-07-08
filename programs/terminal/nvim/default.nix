@@ -98,6 +98,25 @@
         -- next greatest remap ever : asbjornHaland
         vim.keymap.set({"n", "v"}, "<leader>y", [["+y]])
         vim.keymap.set("n", "<leader>Y", [["+Y]])
+
+        -- Theme toggle command
+        local themes = {
+          dark = "github_dark_default",
+          light = "github_light_default"
+        }
+        local current_theme = "dark"
+
+        function ToggleTheme()
+          if current_theme == "dark" then
+            current_theme = "light"
+          else
+            current_theme = "dark"
+          end
+          vim.cmd("colorscheme " .. themes[current_theme])
+        end
+
+        vim.api.nvim_create_user_command('ToggleTheme', ToggleTheme, {})
+        vim.keymap.set('n', '<leader>tt', ':ToggleTheme<CR>', { noremap = true, silent = true })
       '';
   };
 

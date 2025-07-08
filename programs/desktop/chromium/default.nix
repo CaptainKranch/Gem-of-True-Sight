@@ -1,5 +1,9 @@
 { config, pkgs, lib, ... }:
 
 {
-  home.packages = with pkgs; [ chromium ];
+  home.packages = with pkgs; [
+    (chromium.override {
+      enableWideVine = true;
+    })
+  ];
 }
