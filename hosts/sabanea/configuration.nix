@@ -124,8 +124,8 @@
     xorg.libXinerama
     xorg.xinit
     xorg.xinput
-    opencode
-    darkman
+    gcc
+    stdenv.cc.cc.lib
   ];
   
   # Steam

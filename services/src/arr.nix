@@ -202,6 +202,32 @@
     wantedBy = [ "podman-compose-nixarr-root.target" ];
   };
 
+  virtualisation.oci-containers.containers."overseerr" = {
+    image = "lscr.io/linuxserver/overseerr:latest";
+    environment = {
+      PGID = "1000";
+      PUID = "1000";
+      TZ = "America/Bogota";
+    };
+    volumes = [
+      # Config Path
+      "/home/danielgm/Documents/Services/nixarr/media/overseerr:/config:rw"
+    ];
+    ports = [ "5055:5055/tcp" ];
+    log-driver = "journald";
+    extraOptions = [
+      "--network-alias=overseerr"
+      "--network=nixarr_default"
+    ];
+  };
+  systemd.services."podman-overseerr" = {
+    serviceConfig = { Restart = lib.mkOverride 500 "always"; };
+    after = [ "podman-network-nixarr_default.service" ];
+    requires = [ "podman-network-nixarr_default.service" ];
+    partOf = [ "podman-compose-nixarr-root.target" ];
+    wantedBy = [ "podman-compose-nixarr-root.target" ];
+  };
+
   # Networks
   systemd.services."podman-network-nixarr_default" = {
     path = [ pkgs.podman ];
