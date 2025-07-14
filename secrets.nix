@@ -26,4 +26,7 @@ in
   
   # Plex claim token
   "plex-claim.age".publicKeys = allUsers ++ [ medellin ];
+  
+  # Cloudflare API token for Caddy DNS challenge
+  "cloudflare-api-token.age".publicKeys = allUsers ++ [ medellin ];
 }
