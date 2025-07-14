@@ -25,6 +25,18 @@
     overlays = [
       # If you want to use overlays exported from other flakes:
       # neovim-nightly-overlay.overlays.default
+      (final: prev: {
+        duckdb = prev.duckdb.overrideAttrs (oldAttrs: rec {
+          version = "1.3.1";
+          src = prev.fetchFromGitHub {
+            owner = "duckdb";
+            repo = "duckdb";
+            rev = "v${version}";
+            # Hash obtained using: nix-prefetch-url --unpack https://github.com/duckdb/duckdb/archive/v1.3.1.tar.gz
+            hash = "sha256-AtlTZsYdGe3uIYmtxaHBgaGHmLj/23gNxE/YiECgvkk=";
+          };
+        });
+      })
     ];
     # Configure your nixpkgs instance
     config = {
@@ -66,29 +78,28 @@
     python3
     uv
     jq
+    podman
   ];
 
   services.gnome.gnome-keyring.enable = true;
   services.gvfs.enable = true;
   services.tailscale.enable = true;
 
-  # Reverse proxy
-  systemd.services.caddy = {
-    serviceConfig = {
-      ExecStart = "/home/danielgm/Documents/Services/Caddy/caddy run --config /home/danielgm/Documents/Services/Caddy/Caddyfile";
-#      User = "caddy";
-#      Group = "caddy";
-      AmbientCapabilities = "CAP_NET_BIND_SERVICE";
-    };
+  # Reverse proxy with Caddy
+  services.caddy = {
+    enable = true;
+    extraConfig = ''
+      memories.thegarnadoeffect.fyi {
+        reverse_proxy http://medellin:2283
+        tls {
+          dns cloudflare {env.CLOUDFLARE_API_TOKEN}
+        }
+      }
+    '';
   };
-  users.users.caddy = {
-    group = "caddy";
-    createHome = true;
-    home = "/var/lib/caddy";
-    shell = "/bin/false";  # for non-login user
-    isSystemUser = true;
-  };
-  users.groups.caddy = {};
+  
+  # Set the Cloudflare API token as an environment variable for Caddy
+  systemd.services.caddy.serviceConfig.EnvironmentFile = "/run/secrets/caddy-env";
 
   systemd.services.promtail = {
     description = "Promtail service for Loki";
@@ -340,6 +351,12 @@
     owner = "danielgm";
     group = "users";
   };
+  
+  age.secrets.cloudflare-api-token = {
+    file = ../../secrets/cloudflare-api-token.age;
+    owner = "caddy";
+    group = "caddy";
+  };
 
   # Create environment files from secrets
   systemd.services."hoarder-env-file" = {
@@ -411,6 +428,22 @@
       mkdir -p /run/secrets
       echo "PLEX_CLAIM=$(cat ${config.age.secrets.plex-claim.path})" > /run/secrets/plex-env
       chmod 600 /run/secrets/plex-env
+    '';
+  };
+
+  systemd.services."caddy-env-file" = {
+    description = "Create caddy environment file from secrets";
+    wantedBy = [ "multi-user.target" ];
+    before = [ "caddy.service" ];
+    serviceConfig = {
+      Type = "oneshot";
+      RemainAfterExit = true;
+    };
+    script = ''
+      mkdir -p /run/secrets
+      echo "CLOUDFLARE_API_TOKEN=$(cat ${config.age.secrets.cloudflare-api-token.path})" > /run/secrets/caddy-env
+      chmod 600 /run/secrets/caddy-env
+      chown caddy:caddy /run/secrets/caddy-env
     '';
   };
 
